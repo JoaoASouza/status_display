@@ -1,0 +1,30 @@
+#!/bin/python3
+
+import psutil
+import serial
+from time import sleep
+
+def tryConnection():
+    while True:
+        try:
+            arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+            return arduino
+        except serial.serialutil.SerialException:
+            sleep(1)
+
+arduino = tryConnection()
+
+while True:
+
+    cpuUsage = int(psutil.cpu_percent(interval=1))
+    cpuTemperature = int(psutil.sensors_temperatures()['k10temp'][0].current)
+    memUsage = int(psutil.virtual_memory().percent)
+
+    try:
+        arduino.write(bytes([cpuUsage]))
+        arduino.write(bytes([cpuTemperature]))
+        arduino.write(bytes([memUsage]))
+
+    except serial.serialutil.SerialException:
+        arduino.close()
+        arduino = tryConnection()
